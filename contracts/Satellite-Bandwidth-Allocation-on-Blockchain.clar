@@ -124,6 +124,27 @@
     (ok (map-get? bids { satellite-id: satellite-id, bidder: bidder }))
 )
 
+(define-public (check-and-release-expired-satellite (satellite-id uint))
+    (let
+        ((satellite (unwrap! (map-get? satellites { satellite-id: satellite-id }) err-not-found)))
+        (if (and (not (get available satellite)) 
+                 (> burn-block-height (get lease-end satellite))
+                 (> (get lease-end satellite) u0))
+            (begin
+                (map-set satellites { satellite-id: satellite-id }
+                    (merge satellite {
+                        available: true,
+                        current-tenant: none,
+                        lease-end: u0
+                    })
+                )
+                (ok true)
+            )
+            (ok false)
+        )
+    )
+)
+
 (define-read-only (get-license-info (satellite-id uint) (owner principal))
     (ok (map-get? bandwidth-licenses { satellite-id: satellite-id, owner: owner }))
 )
