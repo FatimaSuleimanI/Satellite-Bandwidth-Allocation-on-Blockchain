@@ -57,9 +57,16 @@
          (expires (+ burn-block-height u144)))
         (asserts! (>= bid-amount (var-get min-bid)) err-insufficient-funds)
         (asserts! (get available satellite) err-not-available)
-        (ok (map-set bids 
+        (ok (map-set bids
             { satellite-id: satellite-id, bidder: tx-sender }
             { amount: bid-amount, expires: expires }))
+    )
+)
+
+(define-public (cancel-bid (satellite-id uint))
+    (let
+        ((bid (unwrap! (map-get? bids { satellite-id: satellite-id, bidder: tx-sender }) err-not-found)))
+        (ok (map-delete bids { satellite-id: satellite-id, bidder: tx-sender }))
     )
 )
 
