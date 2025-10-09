@@ -1,4 +1,4 @@
-# 🛰️ Satellite Bandwidth Allocation Smart Contract
+# Satellite Bandwidth Allocation Smart Contract
 
 A decentralized marketplace for managing and leasing satellite communication bandwidth on the Stacks blockchain.
 
@@ -9,12 +9,14 @@ A decentralized marketplace for managing and leasing satellite communication ban
 - Accept bids and create rental agreements
 - Automatic license management
 - Transparent pricing and allocation
+- Transfer satellite ownership between principals
 
 ## 📡 Contract Functions
 
 ### For Satellite Owners
 - `register-satellite`: Register a new satellite with bandwidth specs
 - `accept-bid`: Accept a bid from a potential tenant
+- `transfer-satellite-ownership`: Transfer ownership of a registered satellite
 
 ### For Tenants
 - `place-bid`: Place a bid for satellite bandwidth
@@ -32,6 +34,7 @@ A decentralized marketplace for managing and leasing satellite communication ban
 3. Users can place bids on available bandwidth
 4. Satellite owners can accept bids
 5. Active leases are managed automatically
+6. Satellite owners can transfer ownership of their assets
 
 ## 🔧 Technical Requirements
 

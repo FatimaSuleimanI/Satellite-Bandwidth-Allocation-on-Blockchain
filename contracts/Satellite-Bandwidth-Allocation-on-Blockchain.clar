@@ -111,13 +111,24 @@
 
 
         (asserts! (>= burn-block-height (get lease-end satellite)) (err u403))
-        
+
         (map-set satellites { satellite-id: satellite-id }
             (merge satellite {
                 available: true,
                 current-tenant: none,
                 lease-end: u0
             })
+        )
+        (ok true)
+    )
+)
+
+(define-public (transfer-satellite-ownership (satellite-id uint) (new-owner principal))
+    (let
+        ((satellite (unwrap! (map-get? satellites { satellite-id: satellite-id }) err-not-found)))
+        (asserts! (is-eq tx-sender (get owner satellite)) err-owner-only)
+        (map-set satellites { satellite-id: satellite-id }
+            (merge satellite { owner: new-owner })
         )
         (ok true)
     )
