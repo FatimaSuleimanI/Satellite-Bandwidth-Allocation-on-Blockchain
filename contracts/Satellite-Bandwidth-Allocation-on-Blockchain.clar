@@ -35,6 +35,14 @@
     }
 )
 
+(define-map bandwidth-adjustments
+    { satellite-id: uint, tenant: principal }
+    {
+        proposed-bandwidth: uint,
+        status: (optional bool)
+    }
+)
+
 (define-public (register-satellite (satellite-id uint) (base-price uint) (bandwidth uint))
     (let
         ((satellite-data {
@@ -165,4 +173,54 @@
 
 (define-read-only (get-license-info (satellite-id uint) (owner principal))
     (ok (map-get? bandwidth-licenses { satellite-id: satellite-id, owner: owner }))
+)
+
+(define-public (request-bandwidth-adjustment (satellite-id uint) (proposed-bandwidth uint))
+    (let
+        ((satellite (unwrap! (map-get? satellites { satellite-id: satellite-id }) err-not-found))
+         (license (unwrap! (map-get? bandwidth-licenses { satellite-id: satellite-id, owner: tx-sender }) err-not-found)))
+        (asserts! (is-eq (some tx-sender) (get current-tenant satellite)) err-owner-only)
+        (asserts! (<= proposed-bandwidth (get bandwidth satellite)) err-insufficient-funds)
+        (asserts! (> burn-block-height (get expires license)) err-expired)
+        (ok (map-set bandwidth-adjustments
+            { satellite-id: satellite-id, tenant: tx-sender }
+            { proposed-bandwidth: proposed-bandwidth, status: none }))
+    )
+)
+
+(define-public (approve-bandwidth-adjustment (satellite-id uint) (tenant principal))
+    (let
+        ((adjustment (unwrap! (map-get? bandwidth-adjustments { satellite-id: satellite-id, tenant: tenant }) err-not-found))
+         (satellite (unwrap! (map-get? satellites { satellite-id: satellite-id }) err-not-found))
+         (license (unwrap! (map-get? bandwidth-licenses { satellite-id: satellite-id, owner: tenant }) err-not-found)))
+        (asserts! (is-eq tx-sender (get owner satellite)) err-owner-only)
+        (asserts! (is-none (get status adjustment)) err-already-listed)
+        (map-set bandwidth-licenses
+            { satellite-id: satellite-id, owner: tenant }
+            (merge license { bandwidth-amount: (get proposed-bandwidth adjustment) })
+        )
+        (map-set bandwidth-adjustments
+            { satellite-id: satellite-id, tenant: tenant }
+            (merge adjustment { status: (some true) })
+        )
+        (ok true)
+    )
+)
+
+(define-public (reject-bandwidth-adjustment (satellite-id uint) (tenant principal))
+    (let
+        ((adjustment (unwrap! (map-get? bandwidth-adjustments { satellite-id: satellite-id, tenant: tenant }) err-not-found))
+         (satellite (unwrap! (map-get? satellites { satellite-id: satellite-id }) err-not-found)))
+        (asserts! (is-eq tx-sender (get owner satellite)) err-owner-only)
+        (asserts! (is-none (get status adjustment)) err-already-listed)
+        (map-set bandwidth-adjustments
+            { satellite-id: satellite-id, tenant: tenant }
+            (merge adjustment { status: (some false) })
+        )
+        (ok true)
+    )
+)
+
+(define-read-only (get-bandwidth-adjustment (satellite-id uint) (tenant principal))
+    (ok (map-get? bandwidth-adjustments { satellite-id: satellite-id, tenant: tenant }))
 )
