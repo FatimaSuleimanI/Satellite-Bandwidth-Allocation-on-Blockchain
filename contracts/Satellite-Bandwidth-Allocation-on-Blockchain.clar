@@ -112,24 +112,44 @@
 )
 
 (define-public (end-lease (satellite-id uint))
-    (let
-        ((satellite (unwrap! (map-get? satellites { satellite-id: satellite-id }) err-not-found)))
-        (asserts! (is-eq (some tx-sender) (get current-tenant satellite)) err-owner-only)
+     (let
+         ((satellite (unwrap! (map-get? satellites { satellite-id: satellite-id }) err-not-found)))
+         (asserts! (is-eq (some tx-sender) (get current-tenant satellite)) err-owner-only)
 
 
 
-        (asserts! (>= burn-block-height (get lease-end satellite)) (err u403))
+         (asserts! (>= burn-block-height (get lease-end satellite)) (err u403))
 
-        (map-set satellites { satellite-id: satellite-id }
-            (merge satellite {
-                available: true,
-                current-tenant: none,
-                lease-end: u0
-            })
-        )
-        (ok true)
-    )
-)
+         (map-set satellites { satellite-id: satellite-id }
+             (merge satellite {
+                 available: true,
+                 current-tenant: none,
+                 lease-end: u0
+             })
+         )
+         (ok true)
+     )
+ )
+
+(define-public (renew-lease (satellite-id uint) (extension-period uint))
+     (let
+         ((satellite (unwrap! (map-get? satellites { satellite-id: satellite-id }) err-not-found))
+          (license (unwrap! (map-get? bandwidth-licenses { satellite-id: satellite-id, owner: tx-sender }) err-not-found))
+          (remaining-blocks (- (get lease-end satellite) burn-block-height))
+          (prorated-payment (/ (* (get base-price satellite) extension-period) u4320)))
+         (asserts! (is-eq (some tx-sender) (get current-tenant satellite)) err-owner-only)
+         (asserts! (> remaining-blocks u0) err-expired)
+         (try! (stx-transfer? prorated-payment tx-sender (get owner satellite)))
+         (map-set satellites { satellite-id: satellite-id }
+             (merge satellite { lease-end: (+ (get lease-end satellite) extension-period) })
+         )
+         (map-set bandwidth-licenses
+             { satellite-id: satellite-id, owner: tx-sender }
+             (merge license { expires: (+ (get expires license) extension-period) })
+         )
+         (ok true)
+     )
+ )
 
 (define-public (transfer-satellite-ownership (satellite-id uint) (new-owner principal))
     (let

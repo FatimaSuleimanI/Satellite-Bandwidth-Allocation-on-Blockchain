@@ -11,6 +11,7 @@ A decentralized marketplace for managing and leasing satellite communication ban
 - Transparent pricing and allocation
 - Transfer satellite ownership between principals
 - Dynamic bandwidth adjustment requests and approvals
+- Lease renewal mechanism for continuous service
 
 ## 📡 Contract Functions
 
@@ -24,6 +25,7 @@ A decentralized marketplace for managing and leasing satellite communication ban
 - `place-bid`: Place a bid for satellite bandwidth
 - `end-lease`: End an active lease agreement
 - `request-bandwidth-adjustment`: Request a change in allocated bandwidth
+- `renew-lease`: Renew an active lease before expiration with prorated payment
 
 ### Read-Only Functions
 - `get-satellite-info`: Get information about a satellite
@@ -41,6 +43,7 @@ A decentralized marketplace for managing and leasing satellite communication ban
 6. Satellite owners can transfer ownership of their assets
 7. Tenants can request bandwidth adjustments during active leases
 8. Satellite owners can approve or reject adjustment requests
+9. Tenants can renew leases before expiration to ensure continuous service
 
 ## 🔧 Technical Requirements
 
@@ -57,6 +60,10 @@ clarinet contract call register-satellite u1 u1000000 u100
 
 ```bash
 clarinet contract call place-bid u1 u1000000
+```
+
+```bash
+clarinet contract call renew-lease u1 u2160
 ```
 ```
 
